@@ -14,8 +14,32 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Install and Setup Cloudflare WARP (Proxy Mode)
+        run: |
+          # 1. Add Cloudflare's GPG key and APT repository
+          curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
+          
+          # 2. Update and Install Cloudflare WARP
+          sudo apt-get update
+          sudo apt-get install cloudflare-warp -y
+          
+          # 3. Register a new device, set to proxy mode, and connect
+          warp-cli --accept-tos registration new
+          warp-cli --accept-tos mode proxy
+          warp-cli --accept-tos connect
+          
+          # 4. Wait a few seconds for the WARP connection to successfully establish
+          echo "Waiting for WARP connection to establish..."
+          sleep 10
+          
+          # 5. Verify the proxy is working (WARP proxy runs locally on SOCKS5 port 40000)
+          echo "Verifying WARP Proxy connection:"
+          curl -s --socks5 127.0.0.1:40000 https://cloudflare.com/cdn-cgi/trace | grep warp
+
       - name: Install Dependencies
-        run: pip install aiohttp tqdm
+        # Added aiohttp_socks so aiohttp can route traffic through the SOCKS5 proxy
+        run: pip install aiohttp tqdm aiohttp_socks
 
       - name: Execute Embedded Python Script
         run: |
@@ -26,6 +50,7 @@ jobs:
           import logging
           from tqdm.asyncio import tqdm
           from asyncio import Semaphore
+          from aiohttp_socks import ProxyConnector
 
           # ---------------- CONFIGURATION ---------------- #
           URLS = [
@@ -84,13 +109,13 @@ jobs:
 
           # ---------------- MAIN EXECUTOR ---------------- #
           async def main():
-              print("Starting aggressive load test with concurrency limiting and ramp-up...")
+              print("Starting aggressive load test via Cloudflare WARP proxy...")
               print(f"Configuration: {CONCURRENCY_LIMIT} concurrent requests, ramping up {REQUESTS_PER_BATCH} reqs/{BATCH_DELAY_SECONDS}s.")
 
-              connector = aiohttp.TCPConnector(
+              # Route all traffic through the Cloudflare WARP local SOCKS5 proxy
+              connector = ProxyConnector.from_url(
+                  'socks5://127.0.0.1:40000',
                   limit=0, # Let the semaphore handle connection limiting
-                  limit_per_host=0,
-                  ttl_dns_cache=300,
                   ssl=False,
                   force_close=False,
                   enable_cleanup_closed=True
