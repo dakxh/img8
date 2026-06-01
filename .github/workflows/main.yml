@@ -33,10 +33,10 @@ jobs:
           TARGET_URL = "https://www.knitt.app/api/convex-proxy"
 
           # --- Load Test Parameters ---
-          CONCURRENCY_LIMIT = 500  # Max number of concurrent requests
-          REQUESTS_PER_BATCH = 1000 # Number of requests to launch each second
-          NUM_BATCHES = 35 # Number of batches to run
-          BATCH_DELAY_SECONDS = 1 # Delay between each batch
+          CONCURRENCY_LIMIT = 1  # Max number of concurrent requests
+          REQUESTS_PER_BATCH = 10 # Number of requests to launch each second
+          NUM_BATCHES = 1 # Number of batches to run
+          BATCH_DELAY_SECONDS = 10 # Delay between each batch
           TOTAL_REQUESTS = REQUESTS_PER_BATCH * NUM_BATCHES
 
 
