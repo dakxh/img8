@@ -27,10 +27,11 @@ jobs:
           sudo apt-get update && sudo apt-get install -y cloudflare-warp
           
           # === CORRECTED WARP CONFIGURATION ===
+          # Pass --accept-tos to ALL commands to bypass the TTY restriction
           sudo warp-cli --accept-tos registration new
-          sudo warp-cli mode proxy
-          sudo warp-cli proxy port 40000
-          sudo warp-cli connect
+          sudo warp-cli --accept-tos mode proxy
+          sudo warp-cli --accept-tos proxy port 40000
+          sudo warp-cli --accept-tos connect
           
           # Wait for the connection to be fully established
           echo "Waiting for WARP connection..."
