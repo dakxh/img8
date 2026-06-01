@@ -27,8 +27,7 @@ jobs:
           sudo apt-get update && sudo apt-get install -y cloudflare-warp
           
           # === CORRECTED WARP CONFIGURATION ===
-          # Use the modern command syntax for the latest warp-cli versions
-          echo Y | sudo warp-cli registration new
+          sudo warp-cli --accept-tos registration new
           sudo warp-cli mode proxy
           sudo warp-cli proxy port 40000
           sudo warp-cli connect
