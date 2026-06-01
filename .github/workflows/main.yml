@@ -53,9 +53,7 @@ jobs:
               "Sec-Fetch-Mode": "no-cors",
               "Sec-Fetch-Dest": "image",
               "Referer": "https://moctale.in/",
-              "Priority": "0",
-              "Cache-Control": "no-cache",
-              "Pragma": "no-cache"
+              "Priority": "0"
           }
 
           # ---------------- LOGGING SETUP ---------------- #
