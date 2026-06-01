@@ -30,25 +30,25 @@ jobs:
           from asyncio import Semaphore
 
           # ---------------- CONFIGURATION ---------------- #
-          TARGET_URL = "https://www.myexamplesite.app/api/convex-proxy"
+          TARGET_URL = "https://www.knitt.app/api/convex-proxy"
 
           # --- Load Test Parameters ---
           CONCURRENCY_LIMIT = 500  # Max number of concurrent requests
           REQUESTS_PER_BATCH = 1000 # Number of requests to launch each second
-          NUM_BATCHES = 5 # Number of batches to run
+          NUM_BATCHES = 35 # Number of batches to run
           BATCH_DELAY_SECONDS = 1 # Delay between each batch
           TOTAL_REQUESTS = REQUESTS_PER_BATCH * NUM_BATCHES
 
 
           HEADERS = {
-              "Host": "www.myexamplesite.app",
+              "Host": "www.knitt.app",
               "Content-Type": "application/json",
               "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36",
               "Accept": "*/*",
-              "Origin": "https://myexamplesite.app",
+              "Origin": "https://knitt.app",
               "Sec-Fetch-Site": "same-origin",
               "Sec-Fetch-Mode": "cors",
-              "Referer": "https://www.myexamplesite.app",
+              "Referer": "https://www.knitt.app",
               "Priority": "u=0"
           }
 
