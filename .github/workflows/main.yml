@@ -29,28 +29,30 @@ jobs:
 
           # ---------------- CONFIGURATION ---------------- #
           URLS = [
-              "https://dm2m3fxlnuun4.cloudfront.net/Telugu/Movie+pics/Gam+Gam+Ganesha+Poster.jpg",
-              "https://dm2m3fxlnuun4.cloudfront.net/Telugu/Movie+pics/Pottel+Poster.jpg",
-              "https://dm2m3fxlnuun4.cloudfront.net/English+/Movie+Poster/se7en+Poster.jpeg",
-              "https://dm2m3fxlnuun4.cloudfront.net/English+/Movie+Poster/Paddington+Poster.jpg"
+              "https://media.moctale.in/images/daeb163f-9938-43e8-b0d3-8e4c8b465767.jpg",
+              "https://media.moctale.in/images/c2040913-e307-4ac4-aada-eba8329b8320.jpg",
+              "https://media.moctale.in/images/3fe14723-fe15-45cc-ba21-27378e1afaa5.jpg",
+              "https://media.moctale.in/images/79ebbc3a-008a-4759-9ced-94acddb415ec.jpg",
+              "https://media.moctale.in/images/6862665a-66b9-410c-87bc-ceb7a78bc6d5.jpg",
+              "https://media.moctale.in/images/86ca87b2-31c5-46bf-938d-2652f3adddde.jpg"
           ]
 
           # --- Load Test Parameters ---
           CONCURRENCY_LIMIT = 500  # Max number of concurrent requests
           REQUESTS_PER_BATCH = 1000 # Number of requests to launch each second
-          NUM_BATCHES = 35 # Number of batches to run
+          NUM_BATCHES = 5 # Number of batches to run
           BATCH_DELAY_SECONDS = 1 # Delay between each batch
           TOTAL_REQUESTS = REQUESTS_PER_BATCH * NUM_BATCHES
 
 
           HEADERS = {
-              "Host": "dm2m3fxlnuun4.cloudfront.net",
+              "Host": "media.moctale.in",
               "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36",
-              "Accept": "image/avif,image/webp,image/apng,image/svg+xml;",
-              "Sec-Fetch-Site": "cross-site",
+              "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+              "Sec-Fetch-Site": "same-site",
               "Sec-Fetch-Mode": "no-cors",
               "Sec-Fetch-Dest": "image",
-              "Referer": "https://knitt.app/",
+              "Referer": "https://moctale.in/",
               "Priority": "0",
               "Cache-Control": "no-cache",
               "Pragma": "no-cache"
